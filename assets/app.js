@@ -90,6 +90,7 @@ function clickMarker(el) {
   $('#badPoints').innerText = '-' + data.bad;
   $('#percent').innerText = (data.good + data.bad === 0 ? '?%' : Math.round(data.good/(data.good+data.bad)*100) + '%');
   $('#redditUser').innerText = data.user;
+  $('#redditUser').href = 'https://reddit.com/u/' + data.user;
 
   let agoText;
   const ago = Date.now() - launchTime + data.ago;
