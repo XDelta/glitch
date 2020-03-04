@@ -29,7 +29,7 @@ app.use(session({
   secret: config['session-secret'],
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: config.https },
+  cookie: { secure: false },
 }));
 
 const isAdmin = name => config.administrators.includes((name || '').toLowerCase());
@@ -57,7 +57,7 @@ if (config['use-auth']) {
       callbackURL: `${config['auth-host']}/auth/reddit/callback`
     },
     (accessToken, refreshToken, profile, done) => {
-      console.log('new user', profile.name);
+      console.log('login', profile.name);
       table.users.findOneAndUpdate(
         {redditId: profile.id},
         {$set: {

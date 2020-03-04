@@ -368,5 +368,5 @@ document.addEventListener('DOMContentLoaded', e => {
   $('.map-child').scrollTop = 1024 - $('.map-child').clientHeight / 2;
 
   authCheck();
-  setInterval(authCheck, 30000);
+  setInterval(authCheck, 30 * 60 * 60 * 1000);
 });

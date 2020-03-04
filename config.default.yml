@@ -20,4 +20,3 @@ db-name: 'glitch'
 
 port: 3000
 session-secret: 'change me to something more secure'
-https: false # Set to true if you are running this behind an ssl protected reverse proxy
