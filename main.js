@@ -284,7 +284,7 @@ app.get('/api/data', (req, res) => {
 
   table.things.aggregate([
     // select only values from today
-    {$match: {created: {$gt: START_DAY + curr_day * day}}},
+    // {$match: {created: {$gt: START_DAY + curr_day * day}}},
 
     // join on votes
     {$lookup: {from: 'votes', localField: 'uuid', foreignField: 'uuid', as: 'votes'}},

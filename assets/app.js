@@ -14,6 +14,8 @@ const ringsKC = [
   .35,
 ]
 
+var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+
 function post(url, body) {
   return fetch(url, {
     method: 'POST',
@@ -36,6 +38,8 @@ function setCursor(x, y) {
 
 // set the zoom level of the map
 function modZoom(d) {
+  if (isFirefox)
+    return;
   zoom += d;
   zoom = Math.min(Math.max(zoom, 0.3), 5);
   $('.map-child').style.zoom = (zoom * 100) + '%';
@@ -216,6 +220,7 @@ function authCheck() {
       // refresh
       return getData();
     })
+    // handle offline message
     .catch(console.error);
 }
 
@@ -273,6 +278,8 @@ function cancelAdd(e) {
 const zoomHelper = v => e => {e.preventDefault();modZoom(v);}
 
 function wheelListener(e) {
+  if(isFirefox)
+    return;
   // helper functions for getting scroll offset
   const left = () => $('.map-child').scrollLeft, top = () => $('.map-child').scrollTop;
   // calculate the mouse position after zooming
