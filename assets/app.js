@@ -14,6 +14,16 @@ const ringsKC = [
   .35,
 ]
 
+function post(url, body) {
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type':'application/json'
+    },
+    body: JSON.stringify(body),
+  });
+}
+
 function setCursor(x, y) {
   cursorPos = [x, y];
   $('.cursor.center').style.left =
@@ -35,6 +45,7 @@ function modZoom(d) {
   $('#zoomValue').innerText = Math.round(zoom * 100) + '%';
 }
 
+// move a marker based on zoom
 function setMarkerPos(el, isPreview=false) {
   const x = parseFloat(el.getAttribute('x'));
   const y = parseFloat(el.getAttribute('y'));
@@ -43,14 +54,15 @@ function setMarkerPos(el, isPreview=false) {
   el.style.zoom = ((1 / zoom) * 100) + '%'
 }
 
+// create a marker on the map
 function addMarker(data) {
   const meta = things[data.thing];
-  console.log(meta, data);
   const el = document.createElement('div');
   el.className = `marker ${meta.ammo || ''} ${data.color || ''}`;
   el.setAttribute('x', data.x);
   el.setAttribute('y', data.y);
   el.title = meta.long;
+  el.setAttribute('data-short', data.thing);
   el.setAttribute('data', JSON.stringify(data));
   setMarkerPos(el);
   el.innerText = data.thing;
@@ -58,6 +70,7 @@ function addMarker(data) {
   return el;
 }
 
+// when one of the markers is clicked
 function clickMarker(el) {
   cancelAdd();
   const preview = $('.preview-menu');
@@ -73,6 +86,7 @@ function clickMarker(el) {
   $('#badPoints').innerText = '-' + data.bad;
   $('#percent').innerText = (data.good + data.bad === 0 ? '?%' : Math.round(data.good/(data.good+data.bad)*100) + '%');
   $('#redditUser').innerText = data.user;
+
   let agoText;
   const ago = Date.now() - launchTime + data.ago;
   if (ago < 5000)
@@ -88,14 +102,52 @@ function clickMarker(el) {
 
   $('#age').innerText = agoText;
 
-  const vote = (id, vote) => e => {
+  const vote = (uuid, vote) => e => {
+    if (vote === data.vote) {
+      if (vote === 0)
+        return;
+      vote = 0;
+    }
+
     e.preventDefault();
+    post('/api/vote', { uuid, vote })
+      .then(r => {
+        if (vote === 0) {
+          if (data.vote !== 0)
+          data[data.vote > 0 ? 'good' : 'bad'] --;
+        }
+        else if (vote !== 0) {
+          data[vote > 0 ? 'good' : 'bad'] ++;
+          if (data.vote !== 0) {
+            data[data.vote > 0 ? 'good' : 'bad'] --;
+          }
+        }
+        data.vote = vote;
+        el.setAttribute('data', JSON.stringify(data));
+        $('#goodPoints').innerText = '+' + data.good;
+        $('#badPoints').innerText = '-' + data.bad;
+        $('#upvoteButton').style.textDecoration = vote >= 0 ? 'underline' : 'none';
+        $('#downvoteButton').style.textDecoration = vote <= 0 ? 'underline' : 'none';
+      })
+      .catch(console.error)
   };
+
+  const remove = e => {
+    post('/api/delete', { uuid: data.uuid })
+      .then(r => {
+        $('.overlay').removeChild(el);
+        $('.preview-menu').style.display = 'none';
+      })
+      .catch(console.error);
+  }
 
   $('#upvoteButton').onclick = vote(data.uuid, 1);
   $('#downvoteButton').onclick = vote(data.uuid, -1);
+  $('#upvoteButton').style.textDecoration = data.vote >= 0 ? 'underline' : 'none';
+  $('#downvoteButton').style.textDecoration = data.vote <= 0 ? 'underline' : 'none';
 
   $('#deleteButton').style.display = data.user === authUser || admin ? 'inline' : 'none';
+  $('#deleteButton').onclick = remove;
   $('.preview-menu .action-items').style.display = authUser ? 'inline' : 'none';
 
   const className = `${meta.ammo || ''} ${data.color || ''}`.trim();
@@ -106,23 +158,63 @@ function clickMarker(el) {
   setMarkerPos(preview, true);
 }
 
+// post something new to the map
 function postData(short, pos, data) {
-  fetch('/api/data', {
-    method: 'POST',
-    headers: {
-      'Content-Type':'application/json'
-    },
-    body: JSON.stringify({
-      id: short,
-      x: pos[0],
-      y: pos[1],
-      color: data.color,
-      round: data.round,
-    })
+  post('/api/data', {
+    id: short,
+    x: pos[0],
+    y: pos[1],
+    color: data.color,
+    round: data.round,
   })
     .then(r => r.json())
     .then(r => {
+      r.ago = -launchTime;
       clickMarker(addMarker(r));
+    })
+    .catch(console.error);
+}
+
+// fetch all the data from the server
+function getData() {
+  return fetch('/api/data')
+    .then(r => r.json())
+    .then(r => {
+      launchTime = Date.now();
+
+      const overlay = $('.overlay');
+      const child = overlay.lastElementChild;
+      while (child) {
+          overlay.removeChild(child);
+          child = overlay.lastElementChild;
+      }
+      r.forEach(addMarker);
+    })
+}
+
+function authCheck() {
+  fetch('/auth/check')
+    .then(r => r.json())
+    .then(r => {
+      console.log('auth data:', r);
+      if (r.banned) {
+        alert('You were banned. Please be respectful next time.');
+        throw 'rip';
+        return;
+      }
+      if (r.isAuth) {
+        $('.addition-menu.no-auth').style.display = 'none';
+        $('.addition-menu.authed').style.display = 'block';
+        authed = true;
+        $('#logout').style.display = 'inline';
+        authUser = r.user;
+        admin = r.admin;
+      } else {
+        $('.addition-menu.no-auth').style.display = 'block';
+        $('.addition-menu.authed').style.display = 'none';
+      }
+      // refresh
+      return getData();
     })
     .catch(console.error);
 }
@@ -156,7 +248,16 @@ const itemInit = el => {
       $('#itemLong').innerText = long;
       $('#itemShort').className = $('#itemLong').className = className;
     } else {
-      console.log('should filter by', className, short);
+      const menu = $(`.item.filtered`);
+      const isFiltered = menu && menu.getAttribute('data-short') === short;
+      // remove focus on other kinds of markers
+      $$(`.filtered:not([data-short="${short}"])`)
+        .forEach(el => el.classList.remove('filtered'));
+
+      // toggle focus on this kind of marker based on the menu focus
+      // (adding new items prevents us from using .toggle)
+      $$(`[data-short="${short}"]`)
+        .forEach(el => el.classList[isFiltered ? 'remove' : 'add']('filtered'));
     }
   }
 }
@@ -266,32 +367,6 @@ document.addEventListener('DOMContentLoaded', e => {
   $('.map-child').scrollLeft = 1024 - $('.map-child').clientWidth / 2;
   $('.map-child').scrollTop = 1024 - $('.map-child').clientHeight / 2;
 
-  fetch('/auth/check')
-    .then(r => r.json())
-    .then(r => {
-      console.log('auth:', r);
-      if (r.banned) {
-        alert('You were banned. Please be respectful next time.');
-        throw 'rip';
-        return;
-      }
-      if (r.isAuth) {
-        $('.addition-menu.no-auth').style.display = 'none';
-        $('.addition-menu.authed').style.display = 'block';
-        authed = true;
-        authUser = r.user;
-        admin = r.admin;
-      } else {
-        $('.addition-menu.no-auth').style.display = 'block';
-        $('.addition-menu.authed').style.display = 'none';
-      }
-      return fetch('/api/data')
-    })
-    .then(r => r.json())
-    .then(r => {
-      launchTime = Date.now();
-      r.forEach(addMarker);
-      console.log('data', r);
-    })
-    .catch(console.error);
+  authCheck();
+  setInterval(authCheck, 30000);
 });

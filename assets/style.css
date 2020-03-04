@@ -80,7 +80,7 @@ body {
   font-size: .7rem;
   transform: scale(1) translate(-50%, calc(-100% - 0.25rem));
 }
-.marker:hover {
+.marker:hover, .marker.filtered {
   transform: scale(2) translate(-25%, calc(-74% - 0.25rem));
   cursor: pointer;
   z-index: 20000;
@@ -163,6 +163,10 @@ body {
   cursor: pointer;
 }
 
+.items-list .item.filtered {
+  background-color: rgba(200, 200, 250, 0.2);
+}
+
 .items-list .item.smg::before{content: 'SMG';}
 .items-list .item.ar::before{content: 'AR';}
 .items-list .item.lmg::before{content: 'LMG';}
@@ -205,7 +209,7 @@ body {
   transform: translate(12px, calc(-1.25rem - 7px - 100%));
 }
 
-.menu a, .menu a:visited {
+.menu a, .menu a:visited, .top-hud a, .top-hud a:visited {
   color: #ccf;
 }
 
@@ -235,4 +239,21 @@ body {
 }
 .bad, a.bad, a.bad:visited {
   color: #ccf !important;
+}
+
+.top-hud {
+  z-index: 50000;
+  position: absolute;
+  font-family: monospace;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0px;
+}
+
+.top-hud #logout {
+  pointer-events: auto;
+  position: absolute;
+  top: 5px;
+  right: 5px;
 }

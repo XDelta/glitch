@@ -1,7 +1,8 @@
 # Replace these
 reddit-key: 'reddit key'
 reddit-secret: 'reddit secret'
-administrators:
+only-admins: false # only admins can upload data
+administrators: # lowercase list of reddit usernames
   - 'your reddit username'
   - 'someone else'
 

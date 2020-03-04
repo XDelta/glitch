@@ -32,6 +32,10 @@ app.use(session({
   cookie: { secure: config.https },
 }));
 
+const isAdmin = name => config.administrators.includes((name || '').toLowerCase());
+
+const START_DAY = new Date('3/3/2020 12:00 CST').getTime();
+
 // things that can be indexed
 const THINGS = 'r99 alt prow r301 g7 flat hem hav spit star '+
   'devo long trip krab sent pk eva moz mast re45 ' +
@@ -101,13 +105,24 @@ if (config['use-auth']) {
   }
 
   app.get('/auth/check', (req, res) => {
-    res.json({isAuth: !!req.user, user: _.get(req, 'user.name')});
+    const name = _.get(req, 'user.name');
+    table.users.findOne({ name }, (err, doc) => {
+      if (err)
+        return res.status(500).json({message: 'Error finding user'});
+
+      res.json({
+        isAuth: !!req.user,
+        user: name,
+        admin: isAdmin(name),
+        banned: doc && doc.banned,
+      });
+    })
   });
 } else {
   ensureAuthenticated = (req, res, next) => next();
 
   app.get('/auth/check', (req, res) => {
-    res.json({isAuth: true, user: null});
+    res.json({isAuth: true, user: null, admin: true});
   });
 }
 
@@ -153,14 +168,17 @@ app.post('/api/data', ensureAuthenticated, (req, res) => {
   }
 
   const now = Date.now();
+  const admin = isAdmin(_.get(req.user, 'name'));
+
+  if (config['use-auth'] && config['only-admins'] && !admin) {
+    return res.status(401).json({message: 'Admin only mode'});
+  }
 
   // one item per minute for untrusted users
-  if (!_.get(req.user, 'trusted') && req.session.dataCooldown && now - req.session.dataCooldown < 30000) {
+  if (!_.get(req.user, 'trusted') && !admin && req.session.dataCooldown && now - req.session.dataCooldown < 30000) {
     punish(req.user);
     return res.status(429).json({message: 'Too many requests'});
   }
-
-  console.log('user', req.user);
 
   const {x, y, id, round, color} = req.body;
 
@@ -196,6 +214,59 @@ app.post('/api/data', ensureAuthenticated, (req, res) => {
   });
 });
 
+// voting request
+app.post('/api/vote', ensureAuthenticated, (req, res) => {
+  const voter = _.get(req.user, 'name', 'guest');
+  const { uuid, vote } = req.body;
+
+  if (vote !== -1 && vote !== 1 && vote !== 0)
+    return res.status(422).json({message: 'Invalid Vote'});
+
+  table.things.findOne({ uuid }, (err, doc) => {
+    if (err)
+      return res.status(500).json({message: 'Error finding thing'});
+    if (!doc)
+      return res.status(404).json({message: 'Thing is missing'});
+
+    table.votes.findOneAndUpdate(
+      {voter, uuid},
+      {$set: {voter, uuid, vote}},
+      {upsert: true, new: true},
+      (err, doc) => {
+        res.json({message: 'ok'});
+      }
+    );
+  })
+});
+
+// delete a thing and its vote
+app.post('/api/delete', ensureAuthenticated, (req,res) => {
+  const user = _.get(req.user, 'name', 'guest');
+  const { uuid } = req.body;
+  console.log('deleting', uuid);
+
+  table.things.findOne({ uuid }, (err, doc) => {
+    if (err)
+      return res.status(500).json({message: 'Error finding thing'});
+    if (!doc)
+      return res.status(404).json({message: 'Thing is missing'});
+
+    console.log('deleting from', doc)
+    if (doc.user !== user && !isAdmin(user) && doc.user !== 'guest')
+      return res.status(401).json({message: 'You cannot delete this'});
+
+    table.things.remove({ uuid }, (err, doc) => {
+      if (err)
+        return res.status(500).json({message: 'Error deleting thing'});
+      table.votes.remove({ uuid }, (err, doc) => {
+        if (err)
+          return res.status(500).json({message: 'Error deleting votes'});
+        res.json({message: 'ok'});
+      });
+    });
+  });
+});
+
 app.get('/api/data', (req, res) => {
   const handle = (err, docs) => {
     if (err) {
@@ -210,26 +281,44 @@ app.get('/api/data', (req, res) => {
   };
 
   const now = Date.now();
+  const day = 24*60*60*1000
+  const curr_day = Math.floor((now - START_DAY)/day);
+
   table.things.aggregate([
+    // select only values from today
+    {$match: {created: {$gt: START_DAY + curr_day * day}}},
+
+    // join on votes
     {$lookup: {from: 'votes', localField: 'uuid', foreignField: 'uuid', as: 'votes'}},
     {$unwind: {path: '$votes', preserveNullAndEmptyArrays: true}},
     {$group: {
+      // group by uuid
       _id: '$uuid',
+
+      // passthrough fields
       uuid: {$first: '$uuid'},
       user: {$first: '$user'},
       thing: {$first: '$thing'},
       color: {$first: '$color'},
       round: {$first: '$round'},
+
+      x: {$first: '$x'},
+      y: {$first: '$y'},
+
+      // calculate time since posting
       ago: {$first: {
         $subtract: [now, '$created'],
       }},
-      x: {$first: '$x'},
-      y: {$first: '$y'},
-      good: {$sum: {$cond: [{$eq: ['$votes.vote', 1]}, 1, 0]}},
-      bad: {$sum: {$cond: [{$eq: ['$votes.vote', -1]}, 1, 0]}},
+
+      // get user's vote
+      vote: {$sum: {$cond: [{$eq: ['$votes.voter', _.get(req.user, 'name', 'guest')]}, '$votes.vote', 0]}},
+
+      // vote counts
+      good: {$sum: {$cond: [{$eq: ['$votes.vote', 1]}, 1, 0]}}, // number of +1's
+      bad: {$sum: {$cond: [{$eq: ['$votes.vote', -1]}, 1, 0]}}, // number of -1's
     }},
-    {$project: {_id: 0}},
-    {$sort: {'y': 1}},
+    {$project: {_id: 0}}, // remove the _id field
+    {$sort: {'y': 1}}, // sort from top to bottom
   ]).toArray(handle);
 });
 
