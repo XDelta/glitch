@@ -57,7 +57,7 @@ if (config['use-auth']) {
       callbackURL: `${config['auth-host']}/auth/reddit/callback`
     },
     (accessToken, refreshToken, profile, done) => {
-      console.log(profile);
+      console.log('new user', profile.name);
       table.users.findOneAndUpdate(
         {redditId: profile.id},
         {$set: {
@@ -88,7 +88,7 @@ if (config['use-auth']) {
       })(req, res, next);
     }
     else {
-      next( new Error(403) );
+      next('Invalid auth');
     }
   });
 
@@ -243,7 +243,6 @@ app.post('/api/vote', ensureAuthenticated, (req, res) => {
 app.post('/api/delete', ensureAuthenticated, (req,res) => {
   const user = _.get(req.user, 'name', 'guest');
   const { uuid } = req.body;
-  console.log('deleting', uuid);
 
   table.things.findOne({ uuid }, (err, doc) => {
     if (err)
@@ -251,7 +250,6 @@ app.post('/api/delete', ensureAuthenticated, (req,res) => {
     if (!doc)
       return res.status(404).json({message: 'Thing is missing'});
 
-    console.log('deleting from', doc)
     if (doc.user !== user && !isAdmin(user) && doc.user !== 'guest')
       return res.status(401).json({message: 'You cannot delete this'});
 
