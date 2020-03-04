@@ -1,0 +1,22 @@
+# Replace these
+reddit-key: 'reddit key'
+reddit-secret: 'reddit secret'
+administrators:
+  - 'your reddit username'
+  - 'someone else'
+
+# Website path for auth redirect
+auth-host: 'http://127.0.0.1:3000'
+# redirect uri in reddit would be
+# http://127.0.0.1:3000/auth/reddit/callback
+
+# Set to true if you want to use reddit auth
+use-auth: false
+
+# Database configuration
+db-url: 'mongodb://127.0.0.1:27017'
+db-name: 'glitch'
+
+port: 3000
+session-secret: 'change me to something more secure'
+https: false # Set to true if you are running this behind an ssl protected reverse proxy

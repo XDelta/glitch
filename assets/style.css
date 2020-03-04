@@ -1,0 +1,238 @@
+
+body, html {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: flex;
+  height: 100vh;
+}
+
+.map-parent {
+  flex: 1;
+  position: relative;
+}
+
+.map-child {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.map-child img, .map-child .overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.map-child .overlay {
+  width: 2048px;
+  height: 2048px;
+  z-index: 2;
+}
+
+.side-nav {
+  display: none;
+  width: 200px;
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.cursor {
+  position: absolute;
+  float: right;
+  pointer-events: none;
+  z-index: 10000;
+}
+
+.cursor.center {
+  transform: translate(-50%, -50%);
+}
+
+.cursor.left {
+  border-top: 2px solid rgba(255, 255, 255, 0.2);
+  width: 2048px;
+  transform: translateY(-1px);
+  height: 0.5px;
+}
+.cursor.top {
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+  transform: translateX(-1px);
+  width: 0.5px;
+  height: 2048px;
+}
+
+.marker {
+  position: absolute;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  font-family: monospace;
+  color: black;
+  font-weight: bold;
+  box-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  font-size: .7rem;
+  transform: scale(1) translate(-50%, calc(-100% - 0.25rem));
+}
+.marker:hover {
+  transform: scale(2) translate(-25%, calc(-74% - 0.25rem));
+  cursor: pointer;
+  z-index: 20000;
+}
+.marker::after {
+  background-color: inherit;
+  position: absolute;
+  left: .25rem;
+  top: .5rem;
+  transform: rotate(45deg);
+  width: calc(1rem);
+  z-index: -1;
+  height: calc(1rem);
+  content: '';
+}
+
+.marker.new {
+  background-color: #0f0;
+}
+
+.items-hud {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  width: auto;
+  z-index: 50000;
+  overflow: visible;
+  font-family: monospace;
+  display: inline-flex;
+  height: 30px;
+}
+
+.items-category {
+  user-select: none;
+  width: 150px;
+  color: white;
+  height: 30px;
+  transform: translateY(0);
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.items-category:hover {
+  height: 330px;
+  transform: translateY(calc(30px - 100%));
+}
+
+.items-title {
+  display: flex;
+  font-size: 20px;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+}
+
+.items-list {
+  font-size: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.items-list .item {
+  padding: 4px 8px;
+  text-align: right;
+  position: relative;
+}
+
+.items-list .item::before {
+  font-size: 12px;
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  color: white;
+  text-shadow: none;
+}
+
+.items-list .item:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+}
+
+.items-list .item.smg::before{content: 'SMG';}
+.items-list .item.ar::before{content: 'AR';}
+.items-list .item.lmg::before{content: 'LMG';}
+.items-list .item.sr::before{content: 'Sniper';}
+.items-list .item.sg::before{content: 'Shotgun';}
+.items-list .item.handgun::before{content: 'Pistol';}
+.item.ammo-light, .menu .ammo-light{color: #f2cb88;}
+.item.ammo-heavy, .menu .ammo-heavy{color: #0a8f5a;}
+.item.ammo-shotgun, .menu .ammo-shotgun{color: #d93e0f;}
+.item.ammo-sniper, .menu .ammo-sniper{color: #248af0;}
+.item.ammo-energy, .menu .ammo-energy{color: #c8d115;}
+.item.ammo-carepackage, .item.gold, .menu .gold{color: #f2bd0c;text-shadow: 0 0 3px #f2bd0c;}
+.item.purple, .menu .purple{color: #e700eb;}
+.marker.ammo-light{background: #f2cb88;}
+.marker.ammo-heavy{background: #0a8f5a;}
+.marker.ammo-shotgun{background: #d93e0f;}
+.marker.ammo-sniper{background: #248af0;}
+.marker.ammo-energy{background: #c8d115;}
+.marker.ammo-carepackage, .marker.gold{background: #f2bd0c;text-shadow: 0 0 3px #f2bd0c;}
+.marker.purple{background: #e700eb;}
+
+.menu {
+  font-family: monospace;
+  user-select: none;
+  pointer-events: auto;
+  z-index: 10000;
+  color: white;
+  padding: 7px;
+  width: 240px;
+  background-color: rgba(0, 0, 0, 0.7);
+  position: absolute;
+}
+
+.cursor .addition-menu {
+  left: 12px;
+  bottom: calc(1.25rem + 7px);
+}
+
+.preview-menu {
+  transform: translate(12px, calc(-1.25rem - 7px - 100%));
+}
+
+.menu a, .menu a:visited {
+  color: #ccf;
+}
+
+.action-items, .points {
+  display: flex;
+}
+
+.action-items a:not(:first-child) {
+  margin-left: 8px;
+}
+
+[flex] {
+  flex: 1;
+}
+
+.addition-menu .selected-item {
+  margin-left: 14px;
+}
+
+.preview-menu .selected-item {
+  text-align: center;
+  margin-bottom: 7px;
+}
+
+.good, a.good, a.good:visited {
+  color: #fd9 !important;
+}
+.bad, a.bad, a.bad:visited {
+  color: #ccf !important;
+}

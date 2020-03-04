@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Apex Loot Tracker</title>
+  <link rel=stylesheet href="style.css">
+  <script src="app.js"></script>
+</head>
+<body>
+  <div class="map-parent">
+    <div class="map-child">
+      <img draggable="false" src="worldsedge.png">
+      <div class="overlay"></div>
+      <div class="cursor left"></div>
+      <div class="cursor top"></div>
+      <div class="cursor center">
+        <div class="marker new"></div>
+        <div class="menu addition-menu authed">
+          <div class="state-0">
+            Select a weapon or item from the bottom menu.
+          </div>
+          <div class="state-1">
+            <div>Selected item:</div>
+            <div class="selected-item">
+              <span id="itemLong"></span> (<span id="itemShort"></span>)
+            </div>
+          </div>
+          <div class="action-items">
+            <a href="#" id="addButton">add</a>
+            <span flex></span>
+            <a href="#" id="cancelButton">cancel</a>
+          </div>
+        </div>
+        <div class="menu addition-menu no-auth">
+          Please <a href="/auth/reddit">login</a> with Reddit to commit
+          data to the map.
+        </div>
+      </div>
+      <div class="menu preview-menu">
+        <div>
+          <div class="selected-item">
+            <span id="previewLong"></span> (<span id="previewShort"></span>)
+          </div>
+          <div class="points">
+            votes:&nbsp;<span id="goodPoints" class="good"></span>&nbsp;<span id="badPoints" class="bad"></span>&nbsp;(<span id="percent"></span>)
+            <span flex></span>
+            <span class="action-items">
+              <a href="#" id="upvoteButton" class="good">+1</a>
+              <a href="#" id="downvoteButton" class="bad">-1</a>
+            </span>
+          </div>
+        </div>
+        <div>user:&nbsp;<a href="#" id="redditUser"></a></div>
+        <div>age:&nbsp;<span id="age"></span></div>
+        <div class="action-items">
+          <span flex></span>
+          <a href="#" id="deleteButton">delete</a>
+          <a href="#" id="closeButton">close</a>
+        </div>
+      </div>
+    </div>
+    <div class="items-hud">
+      <div class="items-category">
+        <div class="items-title">
+          guns
+        </div>
+        <div class="items-list">
+          <div data-short="r99" data-name="r99" class="item smg ammo-light">r99</div>
+          <div data-short="alt" data-name="alternator" class="item smg ammo-light">alt</div>
+          <div data-short="prow" data-name="prowler" class="item smg ammo-heavy">prow</div>
+          <div data-short="r301" data-name="r301" class="item ar ammo-light">r301</div>
+          <div data-short="g7" data-name="g7 scout" class="item ar ammo-light">g7</div>
+          <div data-short="flat" data-name="flatline" class="item ar ammo-heavy">flat</div>
+          <div data-short="hem" data-name="hemlock" class="item ar ammo-heavy">hem</div>
+          <div data-short="hav" data-name="havok" class="item ar ammo-energy">hav</div>
+          <div data-short="spit" data-name="spitfire" class="item lmg ammo-heavy">spit</div>
+          <div data-short="star" data-name="l-star" class="item lmg ammo-energy">star</div>
+          <div data-short="devo" data-name="devotion" class="item lmg ammo-carepackage">devo</div>
+          <div data-short="long" data-name="longbow" class="item sr ammo-sniper">long</div>
+          <div data-short="trip" data-name="triple-take" class="item sr ammo-sniper">trip</div>
+          <div data-short="krab" data-name="kraber" class="item sr ammo-carepackage">krab</div>
+          <div data-short="sent" data-name="sentinel" class="item sr ammo-sniper">sent</div>
+          <div data-short="pk" data-name="peacekeeper" class="item sg ammo-shotgun">pk</div>
+          <div data-short="eva" data-name="eva-8" class="item sg ammo-shotgun">eva</div>
+          <div data-short="moz" data-name="mozambique" class="item sg ammo-shotgun">moz</div>
+          <div data-short="mast" data-name="mastiff" class="item sg ammo-carepackage">mast</div>
+          <div data-short="re45" data-name="re-45" class="item handgun ammo-light">re45</div>
+          <div data-short="2020" data-name="p2020" class="item handgun ammo-light">2020</div>
+          <div data-short="wing" data-name="wingman" class="item handgun ammo-heavy">wing</div>
+        </div>
+      </div>
+      <div class="items-category">
+        <div class="items-title">
+          armor
+        </div>
+        <div class="items-list">
+          <div data-short="evo" data-name="evo shield" class="item">evo</div>
+          <div data-short="helm" data-name="helmet" class="item gold">helm</div>
+          <div data-short="body" data-name="body shield" class="item gold">body</div>
+          <div data-short="knok" data-name="knock down" class="item gold">knok</div>
+          <div data-short="pack" data-name="backpack" class="item gold">pack</div>
+          <div data-short="helm" data-name="helmet" class="item purple">helm</div>
+          <div data-short="body" data-name="body shield" class="item purple">body</div>
+          <div data-short="knok" data-name="knock down" class="item purple">knok</div>
+          <div data-short="pack" data-name="backpack" class="item purple">pack</div>
+        </div>
+      </div>
+      <div class="items-category">
+        <div class="items-title">
+          usables
+        </div>
+        <div class="items-list">
+          <div data-short="med" data-name="medkit" class="item">med</div>
+          <div data-short="phx" data-name="pheonix kit" class="item">phx</div>
+          <div data-short="batt" data-name="battery" class="item">batt</div>
+          <div data-short="ult" data-name="ultimate accel" class="item">ult</div>
+        </div>
+      </div>
+      <div class="items-category">
+        <div class="items-title">
+          attachments
+        </div>
+        <div class="items-list">
+          <div data-short="stab" data-name="gold barrel" class="item gold">stab</div>
+          <div data-short="1x" data-name="1x digital threat" class="item gold">1x</div>
+          <div data-short="10x" data-name="4-10x digital threat" class="item gold">10x</div>
+          <div data-short="8x" data-name="4-8x scope" class="item gold">8x</div>
+          <div data-short="anv" data-name="anvil receiver" class="item gold">anv</div>
+          <div data-short="2tap" data-name="double tap" class="item purple">2tap</div>
+          <div data-short="fire" data-name="select fire" class="item purple">fire</div>
+          <div data-short="chok" data-name="precision choke" class="item purple">chok</div>
+          <div data-short="hamm" data-name="hammer point" class="item purple">hamm</div>
+        </div>
+      </div>
+      <div class="items-category">
+        <div class="items-title">
+          round info
+        </div>
+        <div class="items-list">
+          <div data-short="ring" data-game="true" data-name="ring" class="item">ring</div>
+          <div data-short="care" data-game="true" data-name="care package" class="item">care</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="side-nav">
+    <div class="buttons">
+      <a href="#" id="zoomMinus">[-]</a>
+      Zoom (<span id="zoomValue">100%</span>)
+      <a href="#" id="zoomPlus">[+]</a>
+    </div>
+  </div>
+</body>
+</html>
