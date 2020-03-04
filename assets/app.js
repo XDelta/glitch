@@ -14,7 +14,9 @@ const ringsKC = [
   .35,
 ]
 
-var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
 
 function post(url, body) {
   return fetch(url, {
@@ -301,31 +303,40 @@ function wheelListener(e) {
   }
 };
 
-function mouseDownListener(e) {
-  if (e.button !== 0) return;
-  if (e.target && e.target.classList.contains('marker')) {
-    clickMarker(e.target);
+function clickView(target, x, y) {
+  if (target && target.classList.contains('marker')) {
+    clickMarker(target);
     return;
   }
-  if (!e.target || e.target.className !== 'overlay')
+  if (!target || target.className !== 'overlay')
     return;
-  cursor = [e.pageX, e.pageY];
-  start = [e.pageX, e.pageY];
+  cursor = [x, y];
+  start = [x, y];
   startScroll = [
     $('.map-child').scrollLeft,
     $('.map-child').scrollTop
   ];
 }
 
-function mouseUpListener(e) {
+function mouseDownListener(e) {
   if (e.button !== 0) return;
+  clickView(e.target, e.pageX, e.pageY)
+}
+
+function touchDownListener(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  clickView(touch.target, touch.pageX, touch.pageY);
+}
+
+function clickUpView(x, y) {
   $('.map-child').style.cursor = 'default';
   if (!cursor)
     return;
 
-  const diff = [e.pageX-cursor[0], e.pageY-cursor[1]];
-  if (Math.hypot(e.pageX - start[0], e.pageY - start[1]) < 5) {
-    const renderPos = [e.pageX/zoom + $('.map-child').scrollLeft, e.pageY/zoom + $('.map-child').scrollTop]
+  const diff = [x-cursor[0], y-cursor[1]];
+  if (Math.hypot(x - start[0], y - start[1]) < 5) {
+    const renderPos = [x/zoom + $('.map-child').scrollLeft, y/zoom + $('.map-child').scrollTop]
     if (renderPos[0] < margin || renderPos[1] < margin || renderPos[0] > 2048-margin || renderPos[1] > 2048-margin)
       return;
     const dataPos = [renderPos[0]/(2048), renderPos[1]/(2048)];
@@ -340,21 +351,52 @@ function mouseUpListener(e) {
   cursor = null;
 }
 
+function mouseUpListener(e) {
+  if (e.button !== 0) return;
+  $('.map-child').style.cursor = 'default';
+  if (!cursor)
+    return;
+
+  clickUpView(e.pageX, e.pageY);
+}
+
+function touchUpListener(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+
+  if (!cursor || !touch)
+    return;
+
+  clickUpView(touch.pageX, touch.pageY);
+}
+
+function shiftView(x, y) {
+  // move the map based on how far the mouse moved and how zoomed in user is
+  // I use a "startScroll" and "start" variable because re-calculating the scroll and mouse position
+  // cause a bit of drift and I was very OCD about it.
+  const diff = [(x-start[0])/zoom, (y-start[1])/zoom];
+  $('.map-child').scrollLeft = startScroll[0]-diff[0];
+  $('.map-child').scrollTop = startScroll[1]-diff[1];
+  cursor = [x, y];
+
+  // set the cursor to a little hand :)
+  $('.map-child').style.cursor = 'grab';
+}
+
 // left mouse click
 function moveListener(e) {
   if (!cursor)
     return;
 
-  // move the map based on how far the mouse moved and how zoomed in user is
-  // I use a "startScroll" and "start" variable because re-calculating the scroll and mouse position
-  // cause a bit of drift and I was very OCD about it.
-  const diff = [(e.pageX-start[0])/zoom, (e.pageY-start[1])/zoom];
-  $('.map-child').scrollLeft = startScroll[0]-diff[0];
-  $('.map-child').scrollTop = startScroll[1]-diff[1];
-  cursor = [e.pageX, e.pageY];
+  shiftView(e.pageX, e.pageY)
+}
 
-  // set the cursor to a little hand :)
-  $('.map-child').style.cursor = 'grab';
+function touchMoveListener(e) {
+  const touch = e.touches[0];
+  if (!cursor || !touch)
+    return;
+
+  shiftView(touch.pageX, touch.pageY)
 }
 
 document.addEventListener('DOMContentLoaded', e => {
@@ -365,6 +407,12 @@ document.addEventListener('DOMContentLoaded', e => {
   $('.map-child').addEventListener('mouseup', mouseUpListener);
   $('.map-child').addEventListener('mouseleave', mouseUpListener);
   $('.map-child').addEventListener('mousemove', moveListener);
+
+  $('.map-child').addEventListener('touchstart', touchDownListener);
+  $('.map-child').addEventListener('touchend', touchUpListener);
+  $('.map-child').addEventListener('touchcancel', touchUpListener);
+  $('.map-child').addEventListener('touchmove', touchMoveListener);
+
   $('#cancelButton').addEventListener('click', cancelAdd);
   $('#closeButton').addEventListener('click', () => $('.preview-menu').style.display = 'none');
 
