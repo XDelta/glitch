@@ -41,6 +41,7 @@ const THINGS = 'r99 alt prow r301 g7 flat hem hav spit star '+
   'devo long trip krab char sent pk eva moz mast re45 ' +
   '2020 wing evo helm body knok pack '+
   'med phx batt ult stab 1x 10x 8x anv '+
+  'hmag lmag emag smag ' +
   '2tap fire chok hamm ring care'.split(' ');
 
 const ARMOR = 'helm body knok pack'.split(' ');
