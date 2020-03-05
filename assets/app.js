@@ -256,7 +256,7 @@ const itemInit = el => {
 
       $('#itemShort').innerText = short;
       $('#itemLong').innerText = long;
-      $$('.selected-item').forEach(e => e.setAttribute('data-short', className ? '' : data.thing));
+      $$('.selected-item').forEach(e => e.setAttribute('data-short', className.replace('item', '') ? '' : short));
       $('#itemShort').className = $('#itemLong').className = className;
     } else {
       const menu = $(`.item.filtered`);

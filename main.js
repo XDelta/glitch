@@ -176,7 +176,7 @@ app.post('/api/data', ensureAuthenticated, (req, res) => {
   }
 
   // one item per minute for untrusted users
-  if (!_.get(req.user, 'trusted') && !admin && req.session.dataCooldown && now - req.session.dataCooldown < 10000) {
+  if (config['use-auth'] && !_.get(req.user, 'trusted') && !admin && req.session.dataCooldown && now - req.session.dataCooldown < 10000) {
     punish(req.user);
     return res.status(429).json({message: 'Too many requests'});
   }

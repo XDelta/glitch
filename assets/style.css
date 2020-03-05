@@ -191,10 +191,10 @@ body {
 .marker.ammo-energy{background: #c8d115;}
 
 .item.ammo-carepackage, .item.gold, .menu .gold,
-.item[data-short="1x"] .menu [data-short="1x"], .selected-item[data-short="1x"],
-.item[data-short="10x"] .menu [data-short="10x"], .selected-item[data-short="10x"],
-.item[data-short="anv"] .menu [data-short="anv"], .selected-item[data-short="anv"],
-.item[data-short="stab"] .menu [data-short="stab"], .selected-item[data-short="stab"]
+.item[data-short="1x"], .selected-item[data-short="1x"] span,
+.item[data-short="10x"], .selected-item[data-short="10x"] span,
+.item[data-short="anv"], .selected-item[data-short="anv"] span,
+.item[data-short="stab"], .selected-item[data-short="stab"] span
 {color: #f2bd0c;text-shadow: 0 0 3px #f2bd0c;}
 .marker.ammo-carepackage, .marker.gold,
 .marker[data-short="1x"],
@@ -203,15 +203,17 @@ body {
 .marker[data-short="stab"]
 {background: #f2bd0c;text-shadow: 0 0 3px #f2bd0c;}
 
-.item[data-short="evo"] .menu [data-short="evo"], .selected-item[data-short="evo"] span{color: #ed5c6d;}.marker[data-short="evo"]{background: #ed5c6d;}
+.item[data-short="evo"], .selected-item[data-short="evo"] span
+{color: #ed5c6d;}
+.marker[data-short="evo"]{background: #ed5c6d;}
 
 .item.purple, .menu .purple,
-.item[data-short="8x"] .menu [data-short="8x"], .selected-item[data-short="8x"],
-.item[data-short*="mag"] .menu [data-short*="mag"], .selected-item[data-short*="mag"],
-.item[data-short="2tap"] .menu [data-short="2tap"], .selected-item[data-short="2tap"],
-.item[data-short="fire"] .menu [data-short="fire"], .selected-item[data-short="fire"],
-.item[data-short="chok"] .menu [data-short="chok"], .selected-item[data-short="chok"],
-.item[data-short="hamm"] .menu [data-short="hamm"], .selected-item[data-short="hamm"] span{color: #e700eb;}
+.item[data-short="8x"], .selected-item[data-short="8x"] span,
+.item[data-short*="mag"], .selected-item[data-short*="mag"] span,
+.item[data-short="2tap"], .selected-item[data-short="2tap"] span,
+.item[data-short="fire"], .selected-item[data-short="fire"] span,
+.item[data-short="chok"], .selected-item[data-short="chok"] span,
+.item[data-short="hamm"], .selected-item[data-short="hamm"] span{color: #e700eb;}
 .marker.purple,
 .marker[data-short="8x"],
 .marker[data-short*="mag"],
