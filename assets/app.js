@@ -104,7 +104,7 @@ function clickMarker(el) {
   else if (ago < 60000 * 60)
     agoText = Math.round(ago/60000) + ' minutes';
   else if (ago < 60000 * 60 * 24)
-    agoText = Math.round(ago/60000/24) + ' hours';
+    agoText = Math.round(ago/60000/60) + ' hours';
   else
     agoText = 'days';
 
@@ -306,15 +306,36 @@ function wheelListener(e) {
   }
 };
 
+function shiftCoords(x, y) {
+  // map rectangle size
+  const rect = $('.map-child').getBoundingClientRect();
+
+  // page size
+  const pageWidth = document.body.clientWidth,
+    pageHeight = document.body.clientHeight;
+
+  // determine space between edge of page and the map square
+  const marginX = pageWidth - rect.width*zoom,
+    marginY = pageHeight - rect.height*zoom;
+
+  // only offset when the X or Y axis of the map is off the page
+  return [
+    x + (marginX < 0 ? 0 : -marginX/2),
+    y + (marginY < 0 ? 0 : -marginY/2),
+  ];
+}
+
 function clickView(target, x, y) {
   if (target && target.classList.contains('marker')) {
     clickMarker(target);
     return;
   }
+
   if (!target || target.className !== 'overlay')
     return;
-  cursor = [x, y];
-  start = [x, y];
+
+  start = cursor = shiftCoords(x, y);
+
   startScroll = [
     $('.map-child').scrollLeft,
     $('.map-child').scrollTop
@@ -336,6 +357,8 @@ function clickUpView(x, y) {
   $('.map-child').style.cursor = 'default';
   if (!cursor)
     return;
+
+  [x, y] = shiftCoords(x, y);
 
   const diff = [x-cursor[0], y-cursor[1]];
   if (Math.hypot(x - start[0], y - start[1]) < 5) {
@@ -374,6 +397,8 @@ function touchUpListener(e) {
 }
 
 function shiftView(x, y) {
+  [x, y] = shiftCoords(x, y);
+
   // move the map based on how far the mouse moved and how zoomed in user is
   // I use a "startScroll" and "start" variable because re-calculating the scroll and mouse position
   // cause a bit of drift and I was very OCD about it.
