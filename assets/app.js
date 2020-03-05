@@ -66,7 +66,6 @@ function setMarkerPos(el, isPreview=false) {
 // create a marker on the map
 function addMarker(data) {
   const meta = things[data.thing];
-  console.log(meta, data.thing);
   const el = document.createElement('div');
   el.className = `marker ${meta && meta.ammo || ''} ${data.color || ''}`;
   el.setAttribute('x', data.x);
@@ -192,6 +191,7 @@ function getData() {
   return fetch('/api/data')
     .then(r => r.json())
     .then(r => {
+      console.log('all items:', r);
       launchTime = Date.now();
 
       const overlay = $('.overlay');
@@ -332,11 +332,18 @@ function shiftCoords(x, y) {
 function clickView(target, x, y) {
   if (target && target.classList.contains('marker')) {
     clickMarker(target);
+    start = cursor = null;
     return;
   }
 
-  if (!target || target.className !== 'overlay')
+  if (!target || target.className !== 'overlay') {
+    start = cursor = null;
+    if (isMobile)
+      target.click();
     return;
+  }
+
+  $('.overlay').blur();
 
   start = cursor = shiftCoords(x, y);
 
@@ -355,9 +362,11 @@ function touchDownListener(e) {
   if (e.touches.length === 1) {
     const touch = e.touches[0];
     // make it full screen please!
-    if(document.documentElement.requestFullscreen)
-      document.documentElement.requestFullscreen();
-
+    try {
+      if(document.documentElement.requestFullscreen)
+        document.documentElement.requestFullscreen();
+    } catch (e) {console.warn(e);}
+    dragDistance = 0;
     clickView(touch.target, touch.pageX, touch.pageY);
   } else if (e.touches.length === 2) {
     multiTouchStart = multiTouchPos = [
@@ -368,15 +377,14 @@ function touchDownListener(e) {
   }
 }
 
-function clickUpView(x, y) {
+function clickUpView(x, y, noshift=false) {
   $('.map-child').style.cursor = 'default';
   if (!cursor)
     return;
 
-  [x, y] = shiftCoords(x, y);
+  [x, y] = noshift ? [x, y] : shiftCoords(x, y);
 
-  const diff = [x-cursor[0], y-cursor[1]];
-  if (Math.hypot(x - start[0], y - start[1]) < 5) {
+  if (dragDistance < 5) {
     const renderPos = [x/zoom + $('.map-child').scrollLeft, y/zoom + $('.map-child').scrollTop]
     if (renderPos[0] < margin || renderPos[1] < margin || renderPos[0] > 2048-margin || renderPos[1] > 2048-margin)
       return;
@@ -390,6 +398,7 @@ function clickUpView(x, y) {
   }
 
   cursor = undefined;
+  start = undefined;
 }
 
 function mouseUpListener(e) {
@@ -404,15 +413,13 @@ function mouseUpListener(e) {
 function touchUpListener(e) {
   e.preventDefault();
 
-  if (e.touches.length === 1) {
-    const touch = e.touches[0];
+  if (e.touches.length === 0) {
     if (!cursor)
       return;
 
-    clickUpView(touch.pageX, touch.pageY);
-  } else if (e.touches.length === 2) {
-    multiTouchStart = multiTouchPos = startScroll = undefined;
+    clickUpView(...cursor, true);
   }
+  multiTouchStart = multiTouchPos = startScroll = undefined;
 }
 
 function shiftView(x, y) {
@@ -424,6 +431,7 @@ function shiftView(x, y) {
   const diff = [(x-start[0])/zoom, (y-start[1])/zoom];
   $('.map-child').scrollLeft = startScroll[0]-diff[0];
   $('.map-child').scrollTop = startScroll[1]-diff[1];
+  dragDistance += Math.hypot(x-cursor[0], y-cursor[1]);
   cursor = [x, y];
 
   // set the cursor to a little hand :)
@@ -438,10 +446,11 @@ function moveListener(e) {
   shiftView(e.pageX, e.pageY)
 }
 
+let dragDistance = 0;
 function touchMoveListener(e) {
-  if (e.touches.length === 1) {
+  if (e.touches.length === 1 && start && cursor) {
     multiTouchStart = multiTouchPos = undefined;
-    if (!cursor)
+    if (!cursor || !start)
       return;
 
     const touch = e.touches[0];

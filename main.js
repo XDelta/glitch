@@ -254,10 +254,10 @@ app.post('/api/delete', ensureAuthenticated, (req,res) => {
     if (doc.user !== user && !isAdmin(user) && doc.user !== 'guest')
       return res.status(401).json({message: 'You cannot delete this'});
 
-    table.things.remove({ uuid }, (err, doc) => {
+    table.things.deleteOne({ uuid }, (err, doc) => {
       if (err)
         return res.status(500).json({message: 'Error deleting thing'});
-      table.votes.remove({ uuid }, (err, doc) => {
+      table.votes.deleteMany({ uuid }, (err, doc) => {
         if (err)
           return res.status(500).json({message: 'Error deleting votes'});
         res.json({message: 'ok'});
