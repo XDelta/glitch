@@ -178,14 +178,26 @@ body {
 .item.ammo-shotgun, .menu .ammo-shotgun{color: #d93e0f;}
 .item.ammo-sniper, .menu .ammo-sniper{color: #248af0;}
 .item.ammo-energy, .menu .ammo-energy{color: #c8d115;}
-.item.ammo-carepackage, .item.gold, .menu .gold{color: #f2bd0c;text-shadow: 0 0 3px #f2bd0c;}
 
 .marker.ammo-light{background: #f2cb88;}
 .marker.ammo-heavy{background: #0a8f5a;}
 .marker.ammo-shotgun{background: #d93e0f;}
 .marker.ammo-sniper{background: #248af0;}
 .marker.ammo-energy{background: #c8d115;}
-.marker.ammo-carepackage, .marker.gold{background: #f2bd0c;text-shadow: 0 0 3px #f2bd0c;}
+
+.item.ammo-carepackage, .item.gold, .menu .gold,
+.item[data-short="1x"] .menu [data-short="1x"], .selected-item[data-short="1x"],
+.item[data-short="10x"] .menu [data-short="10x"], .selected-item[data-short="10x"],
+.item[data-short="anv"] .menu [data-short="anv"], .selected-item[data-short="anv"],
+.item[data-short="stab"] .menu [data-short="stab"], .selected-item[data-short="stab"]
+{color: #f2bd0c;text-shadow: 0 0 3px #f2bd0c;}
+.marker.ammo-carepackage, .marker.gold,
+.marker[data-short="1x"],
+.marker[data-short="10x"],
+.marker[data-short="anv"],
+.marker[data-short="stab"]
+{background: #f2bd0c;text-shadow: 0 0 3px #f2bd0c;}
+
 .item[data-short="evo"] .menu [data-short="evo"], .selected-item[data-short="evo"] span{color: #ed5c6d;}.marker[data-short="evo"]{background: #ed5c6d;}
 
 .item.purple, .menu .purple,
