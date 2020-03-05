@@ -352,6 +352,7 @@ function clickView(target, x, y) {
 
 function mouseDownListener(e) {
   if (e.button !== 0) return;
+  dragDistance = 0;
   clickView(e.target, e.pageX, e.pageY)
 }
 
