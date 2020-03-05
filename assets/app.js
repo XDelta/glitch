@@ -63,11 +63,12 @@ function setMarkerPos(el, isPreview=false) {
 // create a marker on the map
 function addMarker(data) {
   const meta = things[data.thing];
+  console.log(meta, data.thing);
   const el = document.createElement('div');
-  el.className = `marker ${meta.ammo || ''} ${data.color || ''}`;
+  el.className = `marker ${meta && meta.ammo || ''} ${data.color || ''}`;
   el.setAttribute('x', data.x);
   el.setAttribute('y', data.y);
-  el.title = meta.long;
+  el.title = meta && meta.long;
   el.setAttribute('data-short', data.thing);
   el.setAttribute('data', JSON.stringify(data));
   setMarkerPos(el);
@@ -158,6 +159,7 @@ function clickMarker(el) {
   $('.preview-menu .action-items').style.display = authUser ? 'inline' : 'none';
 
   const className = `${meta.ammo || ''} ${data.color || ''}`.trim();
+  $$('.selected-item').forEach(e => e.setAttribute('data-short', className ? '' : data.thing));
   $('#previewShort').className =
   $('#previewLong').className = className;
 
@@ -254,6 +256,7 @@ const itemInit = el => {
 
       $('#itemShort').innerText = short;
       $('#itemLong').innerText = long;
+      $$('.selected-item').forEach(e => e.setAttribute('data-short', className ? '' : data.thing));
       $('#itemShort').className = $('#itemLong').className = className;
     } else {
       const menu = $(`.item.filtered`);

@@ -179,14 +179,29 @@ body {
 .item.ammo-sniper, .menu .ammo-sniper{color: #248af0;}
 .item.ammo-energy, .menu .ammo-energy{color: #c8d115;}
 .item.ammo-carepackage, .item.gold, .menu .gold{color: #f2bd0c;text-shadow: 0 0 3px #f2bd0c;}
-.item.purple, .menu .purple{color: #e700eb;}
+
 .marker.ammo-light{background: #f2cb88;}
 .marker.ammo-heavy{background: #0a8f5a;}
 .marker.ammo-shotgun{background: #d93e0f;}
 .marker.ammo-sniper{background: #248af0;}
 .marker.ammo-energy{background: #c8d115;}
 .marker.ammo-carepackage, .marker.gold{background: #f2bd0c;text-shadow: 0 0 3px #f2bd0c;}
-.marker.purple{background: #e700eb;}
+.item[data-short="evo"] .menu [data-short="evo"], .selected-item[data-short="evo"] span{color: #ed5c6d;}.marker[data-short="evo"]{background: #ed5c6d;}
+
+.item.purple, .menu .purple,
+.item[data-short="8x"] .menu [data-short="8x"], .selected-item[data-short="8x"],
+.item[data-short*="mag"] .menu [data-short*="mag"], .selected-item[data-short*="mag"],
+.item[data-short="2tap"] .menu [data-short="2tap"], .selected-item[data-short="2tap"],
+.item[data-short="fire"] .menu [data-short="fire"], .selected-item[data-short="fire"],
+.item[data-short="chok"] .menu [data-short="chok"], .selected-item[data-short="chok"],
+.item[data-short="hamm"] .menu [data-short="hamm"], .selected-item[data-short="hamm"] span{color: #e700eb;}
+.marker.purple,
+.marker[data-short="8x"],
+.marker[data-short*="mag"],
+.marker[data-short="2tap"],
+.marker[data-short="fire"],
+.marker[data-short="chok"],
+.marker[data-short="hamm"]{background: #e700eb;}
 
 .menu {
   font-family: monospace;
