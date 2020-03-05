@@ -465,17 +465,19 @@ function touchMoveListener(e) {
     const startMidpoint = getMidpoint(...multiTouchPos);
     const currMidpoint = getMidpoint(...touchCurr);
 
-    // offset the scrolling by the difference
-    const diff = [currMidpoint[0] - startMidpoint[0], currMidpoint[1] - startMidpoint[1]];
-    // calculate the mouse position after zooming
-    const oldPos = [currMidpoint[0]/zoom + leftScroll(), currMidpoint[1]/zoom + topScroll()];
-    modZoom(currDist/startDist - lastDist/startDist);
-    const newPos = [currMidpoint[0]/zoom + leftScroll(), currMidpoint[1]/zoom + topScroll()];
+    window.requestAnimationFrame(() => {
+      // offset the scrolling by the difference
+      const diff = [currMidpoint[0] - startMidpoint[0], currMidpoint[1] - startMidpoint[1]];
+      // calculate the mouse position after zooming
+      const oldPos = [currMidpoint[0]/zoom + leftScroll(), currMidpoint[1]/zoom + topScroll()];
+      modZoom(currDist/startDist - lastDist/startDist);
+      const newPos = [currMidpoint[0]/zoom + leftScroll(), currMidpoint[1]/zoom + topScroll()];
 
-    // shift scroll by the mouse movement and the change due to zoom
-    $('.map-child').scrollLeft += - diff[0]/zoom - (newPos[0] - oldPos[0]);
-    $('.map-child').scrollTop += - diff[1]/zoom - (newPos[1] - oldPos[1]);
-    multiTouchPos = touchCurr;
+      // shift scroll by the mouse movement and the change due to zoom
+      $('.map-child').scrollLeft += - diff[0]/zoom - (newPos[0] - oldPos[0]);
+      $('.map-child').scrollTop += - diff[1]/zoom - (newPos[1] - oldPos[1]);
+      multiTouchPos = touchCurr;
+    });
   }
 }
 
