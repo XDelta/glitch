@@ -17,6 +17,9 @@ const ringsKC = [
 const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
+// helper functions for getting scroll offset
+const leftScroll = () => $('.map-child').scrollLeft,
+  topScroll = () => $('.map-child').scrollTop;
 
 function post(url, body) {
   return fetch(url, {
@@ -286,12 +289,13 @@ const zoomHelper = v => e => {e.preventDefault();modZoom(v);}
 function wheelListener(e) {
   if(isFirefox)
     return;
-  // helper functions for getting scroll offset
-  const left = () => $('.map-child').scrollLeft, top = () => $('.map-child').scrollTop;
+
+  const [x, y] = shiftCoords(e.pageX, e.pageY)
+
   // calculate the mouse position after zooming
-  const oldPos = [e.pageX/zoom + left(), e.pageY/zoom + top()];
+  const oldPos = [x/zoom + leftScroll(), y/zoom + topScroll()];
   modZoom(Math.sign(e.deltaY) * (zoom > 1.5 ? -0.4 : -0.1));
-  const newPos = [e.pageX/zoom + left(), e.pageY/zoom + top()];
+  const newPos = [x/zoom + leftScroll(), y/zoom + topScroll()];
 
   // offset the scrolling by the difference
   const diff = [newPos[0] - oldPos[0], newPos[1] - oldPos[1]];
@@ -300,9 +304,9 @@ function wheelListener(e) {
 
   // re-adjust the starting position of the cursor for this drag
   if (cursor) {
-    start = [e.pageX, e.pageY];
-    cursor = [e.pageX, e.pageY];
-    startScroll = [left(), top()];
+    start = shiftCoords(e.pageX, e.pageY);
+    cursor = shiftCoords(e.pageX, e.pageY);
+    startScroll = [leftScroll(), topScroll()];
   }
 };
 
@@ -336,10 +340,7 @@ function clickView(target, x, y) {
 
   start = cursor = shiftCoords(x, y);
 
-  startScroll = [
-    $('.map-child').scrollLeft,
-    $('.map-child').scrollTop
-  ];
+  startScroll = [leftScroll(), topScroll()];
 }
 
 function mouseDownListener(e) {
@@ -347,10 +348,24 @@ function mouseDownListener(e) {
   clickView(e.target, e.pageX, e.pageY)
 }
 
+let multiTouchStart, multiTouchPos;
 function touchDownListener(e) {
   e.preventDefault();
-  const touch = e.touches[0];
-  clickView(touch.target, touch.pageX, touch.pageY);
+
+  if (e.touches.length === 1) {
+    const touch = e.touches[0];
+    // make it full screen please!
+    if(document.documentElement.requestFullscreen)
+      document.documentElement.requestFullscreen();
+
+    clickView(touch.target, touch.pageX, touch.pageY);
+  } else if (e.touches.length === 2) {
+    multiTouchStart = multiTouchPos = [
+      shiftCoords(e.touches[0].pageX, e.touches[0].pageY),
+      shiftCoords(e.touches[1].pageX, e.touches[1].pageY),
+    ];
+    startScroll = [leftScroll(), topScroll()];
+  }
 }
 
 function clickUpView(x, y) {
@@ -374,7 +389,7 @@ function clickUpView(x, y) {
     setCursor(...dataPos);
   }
 
-  cursor = null;
+  cursor = undefined;
 }
 
 function mouseUpListener(e) {
@@ -388,12 +403,16 @@ function mouseUpListener(e) {
 
 function touchUpListener(e) {
   e.preventDefault();
-  const touch = e.touches[0];
 
-  if (!cursor || !touch)
-    return;
+  if (e.touches.length === 1) {
+    const touch = e.touches[0];
+    if (!cursor)
+      return;
 
-  clickUpView(touch.pageX, touch.pageY);
+    clickUpView(touch.pageX, touch.pageY);
+  } else if (e.touches.length === 2) {
+    multiTouchStart = multiTouchPos = startScroll = undefined;
+  }
 }
 
 function shiftView(x, y) {
@@ -420,11 +439,44 @@ function moveListener(e) {
 }
 
 function touchMoveListener(e) {
-  const touch = e.touches[0];
-  if (!cursor || !touch)
-    return;
+  if (e.touches.length === 1) {
+    multiTouchStart = multiTouchPos = undefined;
+    if (!cursor)
+      return;
 
-  shiftView(touch.pageX, touch.pageY)
+    const touch = e.touches[0];
+    shiftView(touch.pageX, touch.pageY)
+  } else if (e.touches.length === 2 && multiTouchStart) {
+    touchCurr = [
+      shiftCoords(e.touches[0].pageX, e.touches[0].pageY),
+      shiftCoords(e.touches[1].pageX, e.touches[1].pageY),
+    ];
+
+    // helper to get distance between two touches
+    const getDist = arr =>
+      Math.hypot(arr[0][0]-arr[1][0],arr[0][1]-arr[1][1]);
+
+    // get midpoint of two coords
+    const getMidpoint = (a, b) => [(a[0]+b[0])/2, (a[1]+b[1])/2];
+
+    const startDist = getDist(multiTouchStart);
+    const lastDist = getDist(multiTouchPos);
+    const currDist = getDist(touchCurr);
+    const startMidpoint = getMidpoint(...multiTouchPos);
+    const currMidpoint = getMidpoint(...touchCurr);
+
+    // offset the scrolling by the difference
+    const diff = [currMidpoint[0] - startMidpoint[0], currMidpoint[1] - startMidpoint[1]];
+    // calculate the mouse position after zooming
+    const oldPos = [currMidpoint[0]/zoom + leftScroll(), currMidpoint[1]/zoom + topScroll()];
+    modZoom(currDist/startDist - lastDist/startDist);
+    const newPos = [currMidpoint[0]/zoom + leftScroll(), currMidpoint[1]/zoom + topScroll()];
+
+    // shift scroll by the mouse movement and the change due to zoom
+    $('.map-child').scrollLeft += - diff[0]/zoom - (newPos[0] - oldPos[0]);
+    $('.map-child').scrollTop += - diff[1]/zoom - (newPos[1] - oldPos[1]);
+    multiTouchPos = touchCurr;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', e => {
