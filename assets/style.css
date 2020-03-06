@@ -29,7 +29,7 @@ body {
   overflow: hidden;
 }
 
-.map-child img, .map-child .overlay {
+.map-child .map, .map-child .overlay {
   position: absolute;
   top: 0;
   left: 0;
@@ -141,6 +141,7 @@ body {
   align-items: center;
   justify-content: center;
   height: 30px;
+  padding: 0 8px;
 }
 
 .items-list {
@@ -293,8 +294,23 @@ body {
   right: 5px;
 }
 
+.map-button {
+  pointer-events: auto;
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  cursor: pointer;
+}
+
 a.disabled {
   pointer-events: none;
   text-decoration: none;
   color: #fcc !important;
+}
+
+.countdown-clock {
+  color: #ccf;
+  font-size: 16px;
+  text-align: center;
+  text-shadow: 0 0 2px #ccf;
 }

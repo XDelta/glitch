@@ -9,7 +9,8 @@
 <body>
   <div class="map-parent">
     <div class="map-child">
-      <img draggable="false" src="worldsedge.png">
+      <img draggable="false" class="map kc" src="kingscanyon.jpg" style="display: none">
+      <img draggable="false" class="map we" src="worldsedge.jpg" style="display: none">
       <div class="overlay"></div>
       <div class="cursor left"></div>
       <div class="cursor top"></div>
@@ -23,6 +24,13 @@
             <div>Selected item:</div>
             <div class="selected-item">
               <span id="itemLong"></span> (<span id="itemShort"></span>)
+            </div>
+          </div>
+          <div class="state-2">
+            <div>
+              This map can not be edited at this time.
+            </div>
+            <div class="kc countdown-clock" style="display: none">
             </div>
           </div>
           <div class="action-items">
@@ -149,6 +157,8 @@
       </div> -->
     </div>
     <div class="top-hud">
+      <a href="#" class="we map-button" style="display: none">see kings canyon</a>
+      <a href="#" class="kc map-button" style="display: none">see worlds edge</a>
       <a id="logout" href="/auth/logout" style="display: none">log out</a>
     </div>
   </div>

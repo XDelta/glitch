@@ -6,13 +6,99 @@ let zoom = 1.00;
 let focused = false;
 let authed = false, authUser, admin;
 let launchTime = Date.now();
+let currMap;
 const things = {};
+
+let countdownTimeout, mapTimeout;
 
 const margin = 50;
 const ringsKC = [
   .58,
   .35,
-]
+];
+
+// event times
+const START_DAY = new Date('3/3/2020 12:00 CST').getTime();
+const SECOND_WEEK = new Date('3/10/2020 12:00 CST').getTime();
+const END_DATE = new Date('3/17/2020 12:00 CST').getTime();
+
+const MIN = 60*1000;
+const HOUR = 60*MIN;
+const DAY = 24*HOUR;
+
+// some helper functions for determining if we're on the right map
+const isSecondWeek = () => Date.now() > SECOND_WEEK;
+const isOver = () => Date.now() > END_DATE;
+const isMapReadOnly = () => (isSecondWeek() ^ !currMap) || isOver();
+
+const dataAge = [0, 0];
+const dataCache = [[], []];
+
+// change the display map, then fetch data
+function setMap(isWorldsEdge) {
+  currMap = isWorldsEdge;
+  $$('.kc').forEach(el => el.style.display = isWorldsEdge ? 'none' : 'block');
+  $$('.we').forEach(el => el.style.display = isWorldsEdge ? 'block' : 'none');
+  cancelAdd();
+  getData(isWorldsEdge);
+
+  // trigger a countdown if it's the right week
+  clearTimeout(countdownTimeout);
+  if (!isSecondWeek() && !currMap)
+    countdown();
+}
+
+// countdown clock for impatient users
+function countdown() {
+  // ignore the clock if we're already in the second week
+  $('.countdown-clock').display = !isSecondWeek() ? 'block' : 'none';
+
+  // hide countdown on at end
+  if (isSecondWeek()) {
+    cancelAdd();
+    return;
+  }
+
+  let text = '';
+
+  const delta = (SECOND_WEEK - Date.now());
+
+  // concatenate some times together
+  if (delta > DAY)
+    text += `${Math.floor(delta/DAY)}d `;
+
+  if (delta > HOUR)
+    text += `${Math.floor((delta % DAY)/HOUR)}h `;
+
+  if (delta > MIN)
+    text += `${Math.floor((delta % HOUR)/MIN)}m `;
+
+  if (delta)
+    text += `${Math.floor((delta % MIN)/1000)}s `;
+
+  $('.countdown-clock').innerText = text;
+  countdownTimeout = setTimeout(countdown, 1000);
+}
+
+// check semi frequently for new map
+function mapCheck() {
+  // if we're already on kings canyon, this check is useless. exit.
+  if (!currMap)
+    return;
+
+  // prevent a bunch of these from stacking up
+  clearTimeout(mapTimeout);
+
+  // determine if it's kings canyon day
+  if (isSecondWeek()) {
+    setMap(false);
+  } else {
+
+    // if we're not within an hour of the release time, check every 5 minutes
+    // otherwise check every second :)
+    mapTimeout = setTimeout(mapCheck, SECOND_WEEK - Date.now() > HOUR ? 5*MIN : 1000);
+  }
+}
 
 const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -101,12 +187,12 @@ function clickMarker(el) {
   const ago = Date.now() - launchTime + data.ago;
   if (ago < 5000)
     agoText = 'moments';
-  else if (ago < 60000)
+  else if (ago < MIN)
     agoText = Math.round(ago/1000) + ' seconds';
-  else if (ago < 60000 * 60)
-    agoText = Math.round(ago/60000) + ' minutes';
-  else if (ago < 60000 * 60 * 24)
-    agoText = Math.round(ago/60000/60) + ' hours';
+  else if (ago < HOUR)
+    agoText = Math.round(ago/MIN) + ' minutes';
+  else if (ago < DAY)
+    agoText = Math.round(ago/HOUR) + ' hours';
   else
     agoText = 'days';
 
@@ -201,6 +287,10 @@ function postData(short, pos, data) {
 
       if (status === 201)
         showCooldown();
+
+      if (status >= 400)
+        return;
+
       r.ago = -launchTime;
       clickMarker(addMarker(r));
     })
@@ -208,20 +298,34 @@ function postData(short, pos, data) {
 }
 
 // fetch all the data from the server
-function getData() {
-  return fetch('/api/data')
+function getData(isWorldsEdge) {
+  const map = isWorldsEdge ? 0 : 1;
+  const renderData = r => {
+    const overlay = $('.overlay');
+    let child = overlay.lastElementChild;
+    while (child) {
+      overlay.removeChild(child);
+      child = overlay.lastElementChild;
+    }
+    r.forEach(addMarker);
+  };
+
+  // check if we fetched this data less than 10 seconds ago
+  if (Date.now() - dataAge[map] < 10000) {
+    launchTime = dataAge[map];
+    renderData(dataCache[map]);
+    return;
+  }
+
+  return fetch('/api/data'+(isWorldsEdge ? '' : '?kc=yes'))
     .then(r => r.json())
     .then(r => {
       console.log('all items:', r);
       launchTime = Date.now();
+      dataAge[map] = launchTime;
+      dataCache[map] = r;
 
-      const overlay = $('.overlay');
-      const child = overlay.lastElementChild;
-      while (child) {
-          overlay.removeChild(child);
-          child = overlay.lastElementChild;
-      }
-      r.forEach(addMarker);
+      renderData(r);
     })
 }
 
@@ -235,6 +339,7 @@ function authCheck() {
         throw 'rip';
         return;
       }
+
       if (r.isAuth) {
         $('.addition-menu.no-auth').style.display = 'none';
         $('.addition-menu.authed').style.display = 'block';
@@ -247,7 +352,8 @@ function authCheck() {
         $('.addition-menu.authed').style.display = 'none';
       }
       // refresh
-      return getData();
+      setMap(!isSecondWeek());
+      mapCheck();
     })
     // handle offline message
     .catch(console.error);
@@ -266,9 +372,12 @@ const itemInit = el => {
 
   return e => {
     e.preventDefault();
-    if (authed && focused) {
+    if (authed && focused && !isMapReadOnly()) {
       $('.state-0').style.display = 'none';
       $('.state-1').style.display = 'block';
+
+      // if we're on the wrong map (second week and worlds edge or first week and kings canyon)
+      // prevent users from adding to the map (entries are time based, not map indexed)
 
       $('#addButton').style.display = 'inline';
       $('#addButton').onclick = e => {
@@ -412,7 +521,9 @@ function clickUpView(x, y, noshift=false) {
       return;
     const dataPos = [renderPos[0]/(2048), renderPos[1]/(2048)];
 
-    $('.state-0').style.display = 'block';
+    const readOnly = isMapReadOnly();
+    $('.state-0').style.display = readOnly ? 'none' : 'block';
+    $('.state-2').style.display = readOnly ? 'block' : 'none';
     $('.state-1').style.display = 'none';
     $('#addButton').style.display = 'none';
     focused = true;
@@ -528,6 +639,9 @@ document.addEventListener('DOMContentLoaded', e => {
 
   $('#cancelButton').addEventListener('click', cancelAdd);
   $('#closeButton').addEventListener('click', () => $('.preview-menu').style.display = 'none');
+
+  $('.map-button.kc').onclick = () => setMap(true);
+  $('.map-button.we').onclick = () => setMap(false);
 
   $$('.items-list .item').forEach(i =>
     i.addEventListener('click', itemInit(i)));

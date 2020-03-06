@@ -35,6 +35,8 @@ app.use(session({
 const isAdmin = name => config.administrators.includes((name || '').toLowerCase());
 
 const START_DAY = new Date('3/3/2020 12:00 CST').getTime();
+const SECOND_WEEK = new Date('3/10/2020 12:00 CST').getTime();
+const END_DATE = new Date('3/17/2020 12:00 CST').getTime();
 
 // things that can be indexed
 const THINGS = 'r99 alt prow r301 g7 flat hem hav spit star '+
@@ -177,6 +179,11 @@ app.post('/api/data', ensureAuthenticated, (req, res) => {
 
   // one item per minute for untrusted users
   const shouldCooldown = config['use-auth'] && !_.get(req.user, 'trusted') && !admin;
+
+  if (shouldCooldown && now > END_DATE) {
+    return res.status(412).json({message: 'Event Complete'});
+  }
+
   if (shouldCooldown && req.session.dataCooldown && now - req.session.dataCooldown < 10000) {
     punish(req.user);
     return res.status(429).json({message: 'Too many requests'});
@@ -246,6 +253,14 @@ app.post('/api/delete', ensureAuthenticated, (req,res) => {
   const user = _.get(req.user, 'name', 'guest');
   const { uuid } = req.body;
 
+  const admin = isAdmin(_.get(req.user, 'name'));
+  const isNotAdmin = config['use-auth'] && !admin;
+
+  // prevent users from deleting data after the event
+  if (isNotAdmin && now > END_DATE) {
+    return res.status(412).json({message: 'Event Complete'});
+  }
+
   table.things.findOne({ uuid }, (err, doc) => {
     if (err)
       return res.status(500).json({message: 'Error finding thing'});
@@ -280,13 +295,15 @@ app.get('/api/data', (req, res) => {
     res.status(200).json(docs);
   };
 
+  const kc = !!req.query.kc;
+
   const now = Date.now();
   const day = 24*60*60*1000
   const curr_day = Math.floor((now - START_DAY)/day);
 
   table.things.aggregate([
-    // select only values from today
-    // {$match: {created: {$gt: START_DAY + curr_day * day}}},
+    // select values before or after start of kings canyon week
+    {$match: {created: {[kc ? '$gt' : '$lt']: SECOND_WEEK}}},
 
     // join on votes
     {$lookup: {from: 'votes', localField: 'uuid', foreignField: 'uuid', as: 'votes'}},
