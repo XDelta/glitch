@@ -292,3 +292,9 @@ body {
   top: 5px;
   right: 5px;
 }
+
+a.disabled {
+  pointer-events: none;
+  text-decoration: none;
+  color: #fcc !important;
+}

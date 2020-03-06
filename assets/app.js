@@ -169,6 +169,22 @@ function clickMarker(el) {
   setMarkerPos(preview, true);
 }
 
+function showCooldown() {
+  $('#addButton').classList.add('disabled');
+  const COOLDOWN_TIME = 10;
+  for (let i = 0; i < COOLDOWN_TIME; i++) {
+    const t = i;
+    setTimeout(
+      () => $('#addButton').innerText = `wait ${COOLDOWN_TIME-t} seconds...`,
+      i * 1000
+    );
+  }
+  setTimeout(() => {
+    $('#addButton').innerText = 'add';
+    $('#addButton').classList.remove('disabled');
+  }, 1000 * COOLDOWN_TIME);
+}
+
 // post something new to the map
 function postData(short, pos, data) {
   post('/api/data', {
@@ -178,8 +194,13 @@ function postData(short, pos, data) {
     color: data.color,
     round: data.round,
   })
-    .then(r => r.json())
-    .then(r => {
+    .then(r => Promise.all([r.status, r.json()]))
+    .then(([status, r]) => {
+      if (r.message === 'Unauthorized')
+        location.reload();
+
+      if (status === 201)
+        showCooldown();
       r.ago = -launchTime;
       clickMarker(addMarker(r));
     })
