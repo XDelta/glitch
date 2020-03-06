@@ -194,7 +194,7 @@ function clickMarker(el) {
   else if (ago < DAY)
     agoText = Math.round(ago/HOUR) + ' hours';
   else
-    agoText = 'days';
+    agoText = Math.floor(ago/DAY) + ' days';
 
   $('#age').innerText = agoText;
 
